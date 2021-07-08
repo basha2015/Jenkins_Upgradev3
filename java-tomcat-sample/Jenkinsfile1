@@ -2,20 +2,30 @@ pipeline{
 	agent any
 	stages{
 		stage('Build Application'){
-		 steps{
-			sh 'mvn -f java-tomcat-sample/pom.xml clean package'
+		steps{
+		sh 'mvn -f java-tomcat-sample/pom.xml clean package'
+			}
+		post{
+			success{
+			echo 'Now Archieving artifacts'
+			archiveArtifacts artifacts: '**/*.war'
+			}
 		 }
-		post {
-		 success{
-		 echo 'Now archieving the artifacts...'
-		 archiveArtifacts artifacts: '**/*.war'
-		  }
+	}
+		stage('Deploying in Staging environment'){
+			steps{
+				build job: 'Deploy_Application_Staging_Env'
+			}
 		}
+		stage('Deploying in PROD envrionment'){
+			steps{
+			timeout(time:5, unit:'DAYS'){
+				input message:'Approve PRODUCTION Deployment'
+			}
+			build job: 'Deploy_Application_PROD_env'
+			}
 		}
-		stage('Deploy in staging environment'){
-           build job: 'Deploy_Application_Staging_Env'
-        }
-
+	}
 		
 	}
 }
